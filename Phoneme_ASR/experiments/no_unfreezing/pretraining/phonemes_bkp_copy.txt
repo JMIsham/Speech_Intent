@@ -1,0 +1,42 @@
+sil     sil Sinhala Tamil
+S       s   ස       ஸ
+IH      ɪ   ඊ        ஈ
+N       n
+Y       j
+UW      u
+AA      ɑ
+R       ɹ
+AH      ʌ
+F       f
+EH      ɛ
+D       d
+V       v
+M       m
+AY      aɪ
+K       k
+Z       z
+HH      h
+P       p
+IY      i
+B       b
+sp      -
+SH      ʃ
+UH      ʊ
+AE      æ
+ER      ɝ
+T       t
+OW      oʊ
+DH      ð
+CH      tʃ
+L       l
+EY      eɪ
+JH      dʒ
+AO      ɔ
+W       w
+G       ɡ
+AW      aʊ
+TH      θ
+NG      ŋ
+OY      ɔɪ
+ZH      ʒ
+spn     spn
