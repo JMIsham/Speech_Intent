@@ -6,6 +6,7 @@ Dependencies
 * Keras, Hyperopt 
 
 Experiment Parameters
+
 Prior to run the experiments you may want change following experiment parameters appropriately. 
 * lang 
 * expr 
