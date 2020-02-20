@@ -87,9 +87,9 @@ print(data_y[:, 0:6].sum(axis=0))
 # split data
 if lang == 'si':
     data_x_train, data_x_test, data_y_train, data_y_test = \
-        train_test_split(data_x, data_y, test_size=0.4, random_state=random_seed)
+        train_test_split(data_x, data_y, test_size=0.2, random_state=random_seed)
     data_x_dev, data_x_test, data_y_dev, data_y_test = \
-        train_test_split(data_x_test, data_y_test, test_size=0.5, random_state=random_seed) 
+        train_test_split(data_x_test, data_y_test, test_size=0.2, random_state=random_seed)
 else:
     data_x_train, data_x_test, data_y_train, data_y_test = \
         train_test_split(data_x, data_y, test_size=0.2, random_state=random_seed)
@@ -387,7 +387,7 @@ def objective(parameters):
 
 print('Starting Hyperopt')
 
-max_evals = 500
+max_evals = 100
 
 # trials = Trials()
 best = fmin(
