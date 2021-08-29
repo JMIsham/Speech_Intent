@@ -23,26 +23,26 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import classification_report
 from sklearn.utils import class_weight
 from sklearn import svm
-from tensorflow import set_random_seed
+import tensorflow
 
 # -----------------------------------------------------------------------------
 
 lang = 'ta'  # 'si', 'ta'
-expr = 'ds2'  # 'ds1', 'ds2', 'phonemes'
-mtype = 'svm'  # '1d_cnn', '2d_cnn', 'svm'
+expr = 'phonemes'  # 'ds1', 'ds2', 'phonemes'
+mtype = '1d_cnn'  # '1d_cnn', '2d_cnn', 'svm'
 
 # random number
 random_seed = 7
 np.random.seed(random_seed)
-set_random_seed(random_seed)
-
+# set_random_seed(random_seed)
+tensorflow.random.set_seed(random_seed)
 
 def get_data(lang, expr, mtype):
     print('Running on ', lang, ' data')
 
     csv_file = {
         'si': '../input/speechsi/formatted_data_v2.csv',
-        'ta': '../input/speechta/tamil_data_v2.csv'
+        'ta': '../data/Tamil_Dataset/Tamil_Data.csv'
     }
     datax_dic = {
         'si': {
@@ -52,14 +52,14 @@ def get_data(lang, expr, mtype):
         },
         'ta': {
             'ds1': '../input/speechta/ds_decode_tamil_data_v2_padded.npy',
-            'ds2': '../input/speechds2/ds2_decode_tamil_data_v2_padded.npy',
-            'phonemes': '../input/speech-phonemes/phoneme_decode_tamil_data_v2_padded.npy'
+            'ds2': '../data/Tamil_Dataset/ds2_decode_Tamil_data_v2.npy',
+            'phonemes': '../data/Tamil_Dataset/phoneme_decode_Tamil_data_v2.npy'
         }
     }
 
     # read csv and get classes
     data = pd.read_csv(csv_file[lang])
-    data_y = data['category_1']
+    data_y = data['intent']
 
     # load ds decoded output
     data_x = np.load(datax_dic[lang][expr])
@@ -209,19 +209,33 @@ def get_model_1d_cnn(dataset, input_shape):
         'm_stride2_size': 10
     }
 
+    # parameters1d_ta = {
+    #     'f_batch_size': 3,
+    #     'm_dropout': 0.1,
+    #     'm_filters1': 39,
+    #     'm_filters2': 26,
+    #     'm_hidden_units': 84,
+    #     'm_kernel1_size': 18,
+    #     'm_kernel2_size': 19,
+    #     'm_pool1_size': 25,
+    #     'm_pool2_size': 20,
+    #     'm_stride1_size': 5,
+    #     'm_stride2_size': 5
+    # }
     parameters1d_ta = {
-        'f_batch_size': 3,
-        'm_dropout': 0.1,
-        'm_filters1': 39,
-        'm_filters2': 26,
-        'm_hidden_units': 84,
-        'm_kernel1_size': 18,
-        'm_kernel2_size': 19,
-        'm_pool1_size': 25,
-        'm_pool2_size': 20,
-        'm_stride1_size': 5,
-        'm_stride2_size': 5
+        'f_batch_size': 1.0,
+        'm_dropout': 0.05,
+        'm_filters1': 43.0,
+        'm_filters2': 17.0,
+        'm_hidden_units': 46.0,
+        'm_kernel1_size': 31.0,
+        'm_kernel2_size': 17.0,
+        'm_pool1_size': 47.0,
+        'm_pool2_size': 41.0,
+        'm_stride1_size': 2.0,
+        'm_stride2_size': 27.0
     }
+
 
     print('Building model for ', dataset, ' dataset')
     if dataset == 'si':
@@ -285,18 +299,31 @@ def get_model_1d_cnn_pho(dataset, input_shape):
         'm_stride2_size': 11
     }
 
+    # parameters1d_ta = {
+    #     'f_batch_size': 4,
+    #     'm_dropout': 0.3,
+    #     'm_filters1': 11,
+    #     'm_filters2': 37,
+    #     'm_hidden_units': 71,
+    #     'm_kernel1_size': 18,
+    #     'm_kernel2_size': 17,
+    #     'm_pool1_size': 18,
+    #     'm_pool2_size': 35,
+    #     'm_stride1_size': 3,
+    #     'm_stride2_size': 1
+    # }
     parameters1d_ta = {
-        'f_batch_size': 4,
-        'm_dropout': 0.3,
-        'm_filters1': 11,
-        'm_filters2': 37,
-        'm_hidden_units': 71,
-        'm_kernel1_size': 18,
+        'f_batch_size': 1,
+        'm_dropout': 0.05,
+        'm_filters1': 43,
+        'm_filters2': 17,
+        'm_hidden_units': 46,
+        'm_kernel1_size': 31,
         'm_kernel2_size': 17,
-        'm_pool1_size': 18,
-        'm_pool2_size': 35,
-        'm_stride1_size': 3,
-        'm_stride2_size': 1
+        'm_pool1_size': 47,
+        'm_pool2_size': 41,
+        'm_stride1_size': 2,
+        'm_stride2_size': 27
     }
 
     print('Building model for ', dataset, ' dataset')

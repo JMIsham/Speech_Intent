@@ -23,7 +23,10 @@ def transcribe(audio_path, parser, model, device):
     # input_sizes = torch.IntTensor([spect.size(3)]).int()
     out = model(Variable(spect, volatile=True))
     out = np.squeeze(out.data.numpy())
+    print("****************************")
+    print(out.shape)
     out = np.pad(out, ((0, c_max_rows - out.shape[0]), (0, 0)), 'constant')
+    print(out.shape)
     return out
 
 
@@ -41,20 +44,20 @@ device = torch.device("cuda" if args.cuda else "cpu")
 model = load_model(device, args.model_path, args.cuda)
 parser = SpectrogramParser(model._audio_conf, normalize=True)
 
+lang = "Tamil"
+base_path = '/home/isham/Projects/MSc/Speech_Intent/'
 
-base_path = '/home/cse/Projects/Speech/StoCv1/'
-
-# audio_folder = 'data/tamil_2/'
-# # read csv from csv
-# data = pd.read_csv(base_path + 'data/tamil_data_v2.csv')
-# file_names = data['n_path']
-# file_names = file_names.apply(lambda x: base_path + audio_folder + str(x) + '.wav')
-
-audio_folder = 'data/formatted_data/'
+audio_folder = 'data/' + lang + '_Dataset/audio_files/'
 # read csv from csv
-data = pd.read_csv(base_path + 'data/formatted_data_v2.csv')
-file_names = data['filename']
+data = pd.read_csv(base_path + 'data/' + lang + '_Dataset/' + lang + '_Data.csv')
+file_names = data['audio_file']
 file_names = file_names.apply(lambda x: base_path + audio_folder + str(x))
+
+# audio_folder = 'data/formatted_data/'
+# # read csv from csv
+# data = pd.read_csv(base_path + 'data/formatted_data_v2.csv')
+# file_names = data['filename']
+# file_names = file_names.apply(lambda x: base_path + audio_folder + str(x))
 
 
 file_names = file_names.values
@@ -69,4 +72,4 @@ for f in tqdm(file_names):
 ds2_features = np.array(ds2_features)
 print(ds2_features.shape)
 
-np.save(base_path + 'data/ds2_decode_sinhala_data_v2_padded', ds2_features)
+np.save(base_path + 'data/' + lang + '_Dataset/ds2_decode_' + lang + '_data_v2', ds2_features)

@@ -1,4 +1,5 @@
-This code is obtained from the  git repo `https://github.com/lorenlugosch/end-to-end-SLU`
+This code is obtained from the  git repo `
+https://github.com/lorenlugosch/end-to-end-SLU`
 
 Dependencies
 - Create a conda environment using [conda_environment.yml](conda_environment.yml) file.

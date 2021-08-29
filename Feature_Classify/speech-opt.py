@@ -41,7 +41,7 @@ mtype = '1d_cnn'  # '1d_cnn', '2d_cnn
 
 csv_dic = {
     'si': '../input/speechsi/formatted_data_v2.csv',
-    'ta': '../input/speechta/tamil_data_v2.csv'
+    'ta': '../data/Tamil_Dataset/Tamil_Data.csv'
 }
 
 datax_dic = {
@@ -52,8 +52,8 @@ datax_dic = {
     },
     'ta': {
         'ds1': '../input/speechta/ds_decode_tamil_data_v2_padded.npy', 
-        'ds2': '../input/speechds2/ds2_decode_tamil_data_v2_padded.npy',
-        'phonemes': '../input/speech-phonemes/phoneme_decode_tamil_data_v2_padded.npy'
+        'ds2': '../data/Tamil_Dataset/ds2_decode_Tamil_data_v2.npy',
+        'phonemes': '../data/Tamil_Dataset/phoneme_decode_Tamil_data_v2.npy'
     }
 }
 
@@ -64,11 +64,11 @@ np.random.seed(random_seed)
 # read csv and gey classes
 data = pd.read_csv(csv_dic[lang])
 
-data_y = data['category_1']
+data_y = data['intent']
 indices = np.arange(len(data_y))
 
 # load ds decoded output
-data_x = np.load(datax_dic[lang][expr])
+data_x = np.load(datax_dic[lang][expr], allow_pickle=True)
 
 
 num_of_classes = len(data_y.unique())
