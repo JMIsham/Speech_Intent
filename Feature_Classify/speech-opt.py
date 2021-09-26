@@ -13,7 +13,7 @@
 
 # Any results you write to the current directory are saved as output.
 
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 import numpy as np
 import pandas as pd
 # import matplotlib.pyplot as plt
@@ -33,11 +33,11 @@ from sklearn.model_selection import train_test_split
 from hyperopt import fmin, tpe, hp, STATUS_OK, STATUS_FAIL, Trials
 from hyperopt.pyll.base import scope
 
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 
-lang = 'ta'     # 'si', 'ta'
-expr = 'phonemes'  # 'ds1', 'ds2', 'phonemes'
-mtype = '1d_cnn'  # '1d_cnn', '2d_cnn
+lang = 'ta'  # 'si', 'ta'
+expr = 'wav2vec'  # 'ds1', 'ds2', 'phonemes', wav2vec
+mtype = '2d_cnn'  # '1d_cnn', '2d_cnn
 
 csv_dic = {
     'si': '../input/speechsi/formatted_data_v2.csv',
@@ -46,13 +46,15 @@ csv_dic = {
 
 datax_dic = {
     'si': {
-        'ds1': '../input/speechsi/ds_decode_data_v2_padded.npy', 
+        'ds1': '../input/speechsi/ds_decode_data_v2_padded.npy',
+        'ds2': '../input/speechds2/ds2_decode_sinhala_data_v2_padded.npy',
         'ds2': '../input/speechds2/ds2_decode_sinhala_data_v2_padded.npy',
         'phonemes': '../input/speech-phonemes/phoneme_decode_sinhala_data_v2_padded.npy'
     },
     'ta': {
-        'ds1': '../input/speechta/ds_decode_tamil_data_v2_padded.npy', 
+        'ds1': '../input/speechta/ds_decode_tamil_data_v2_padded.npy',
         'ds2': '../data/Tamil_Dataset/ds2_decode_Tamil_data_v2.npy',
+        'wav2vec': '../data/Tamil_Dataset/wav2vec_decode_Tamil_data_v2.npy',
         'phonemes': '../data/Tamil_Dataset/phoneme_decode_Tamil_data_v2.npy'
     }
 }
@@ -69,7 +71,6 @@ indices = np.arange(len(data_y))
 
 # load ds decoded output
 data_x = np.load(datax_dic[lang][expr], allow_pickle=True)
-
 
 num_of_classes = len(data_y.unique())
 print('Total data samples   :', data_x.shape[0])
@@ -101,7 +102,8 @@ if lang == 'si':
         data_x_dev = np.reshape(data_x_dev, (data_x_dev.shape[0], data_x_dev.shape[1], data_x_dev.shape[2]))
         data_x_test = np.reshape(data_x_test, (data_x_test.shape[0], data_x_test.shape[1], data_x_test.shape[2]))
     if mtype == '2d_cnn':
-        data_x_train = np.reshape(data_x_train, (data_x_train.shape[0], data_x_train.shape[1], data_x_train.shape[2], 1))
+        data_x_train = np.reshape(data_x_train,
+                                  (data_x_train.shape[0], data_x_train.shape[1], data_x_train.shape[2], 1))
         data_x_dev = np.reshape(data_x_dev, (data_x_dev.shape[0], data_x_dev.shape[1], data_x_dev.shape[2], 1))
         data_x_test = np.reshape(data_x_test, (data_x_test.shape[0], data_x_test.shape[1], data_x_test.shape[2], 1))
 else:
@@ -109,9 +111,9 @@ else:
         data_x_train = np.reshape(data_x_train, (data_x_train.shape[0], data_x_train.shape[1], data_x_train.shape[2]))
         data_x_test = np.reshape(data_x_test, (data_x_test.shape[0], data_x_test.shape[1], data_x_test.shape[2]))
     if mtype == '2d_cnn':
-        data_x_train = np.reshape(data_x_train, (data_x_train.shape[0], data_x_train.shape[1], data_x_train.shape[2], 1))
+        data_x_train = np.reshape(data_x_train,
+                                  (data_x_train.shape[0], data_x_train.shape[1], data_x_train.shape[2], 1))
         data_x_test = np.reshape(data_x_test, (data_x_test.shape[0], data_x_test.shape[1], data_x_test.shape[2], 1))
-
 
 # # Separate indices
 # indices_train = data_y_train[:, 6]
@@ -136,7 +138,8 @@ if lang == 'si':
     print('Validation Data :', data_y_dev.sum(axis=0))
 print('Testing Data    :', data_y_test.sum(axis=0))
 
-#---------------------------------------------------------------------
+
+# ---------------------------------------------------------------------
 def get_cnn1d_model3(param, num_of_classes):
     model_ = Sequential()
 
@@ -145,7 +148,7 @@ def get_cnn1d_model3(param, num_of_classes):
         param['m_kernel1_size'],
         activation='relu',
         padding='same',
-        # input_shape=(555, 29)
+        # input_shape=(256, 42)
         input_shape=data_x_train.shape[1:]
     ))
     model_.add(MaxPooling1D(
@@ -309,11 +312,12 @@ def get_fnn_model1(param, num_of_classes):
     model_.add(Dense(param['dense3'], activation='relu'))
     model_.add(Dropout(param['m_dropout']))
     model_.add(Dense(num_of_classes, activation='softmax'))
-    
+
     # Compile model
     model_.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
     # model_.summary()
     return model_
+
 
 def get_fnn_model1_search_space():
     space = {
@@ -328,24 +332,26 @@ def get_fnn_model1_search_space():
 
     return space
 
-#---------------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------------
 model_dic = {
-    '1d_cnn':{
+    '1d_cnn': {
         'mf': get_cnn1d_model3,
         'sf': get_cnn1d_search_space3
     },
-    '2d_cnn':{
+    '2d_cnn': {
         'mf': get_cnn1_model3,
         'sf': get_cnn1_search_space3
     }
 }
 
-#---------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------
 
 # set model function and hyper. space function
 
 model_f = model_dic[mtype]['mf']
 space_f = model_dic[mtype]['sf']
+
 
 # define objective function
 def objective(parameters):
@@ -402,8 +408,8 @@ print('Best parameters')
 print(best)
 
 print('Saving Parameters to parameter_file.txt')
-string = 'Timestamp   : ' + str(datetime.now()) + ', ' +\
-         'Evaluations : ' + str(max_evals) + ', ' +\
+string = 'Timestamp   : ' + str(datetime.now()) + ', ' + \
+         'Evaluations : ' + str(max_evals) + ', ' + \
          'Best Param  : ' + str(best)
 file = open('parameter_file.txt', 'a')
 file.write(string)

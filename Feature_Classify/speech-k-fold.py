@@ -28,14 +28,15 @@ import tensorflow
 # -----------------------------------------------------------------------------
 
 lang = 'ta'  # 'si', 'ta'
-expr = 'phonemes'  # 'ds1', 'ds2', 'phonemes'
-mtype = '1d_cnn'  # '1d_cnn', '2d_cnn', 'svm'
+expr = 'wav2vec'  # 'ds1', 'ds2', 'phonemes', wav2vec
+mtype = '2d_cnn'  # '1d_cnn', '2d_cnn', 'svm'
 
 # random number
 random_seed = 7
 np.random.seed(random_seed)
 # set_random_seed(random_seed)
 tensorflow.random.set_seed(random_seed)
+
 
 def get_data(lang, expr, mtype):
     print('Running on ', lang, ' data')
@@ -53,8 +54,10 @@ def get_data(lang, expr, mtype):
         'ta': {
             'ds1': '../input/speechta/ds_decode_tamil_data_v2_padded.npy',
             'ds2': '../data/Tamil_Dataset/ds2_decode_Tamil_data_v2.npy',
-            'phonemes': '../data/Tamil_Dataset/phoneme_decode_Tamil_data_v2.npy'
-        }
+            'phonemes': '../data/Tamil_Dataset/phoneme_decode_Tamil_data_v2.npy',
+            'wav2vec': '../data/Tamil_Dataset/wav2vec_decode_Tamil_data_v2.npy'
+
+    }
     }
 
     # read csv and get classes
@@ -152,6 +155,7 @@ def get_cnn1d_model1(param, num_of_classes, input_shape):
         param['m_kernel1_size'],
         activation='relu',
         padding='same',
+        # input_shape=(256, 42)
         # input_shape=(555, 29)
         input_shape=input_shape
     ))
@@ -236,7 +240,6 @@ def get_model_1d_cnn(dataset, input_shape):
         'm_stride2_size': 27.0
     }
 
-
     print('Building model for ', dataset, ' dataset')
     if dataset == 'si':
         model_ = get_cnn1d_model1(parameters1d_si, 6, input_shape)
@@ -261,19 +264,32 @@ def get_model_1d_cnn_ds2(dataset, input_shape):
         'm_stride2_size': 17
     }
 
-    parameters1d_ta = {
-        'f_batch_size': 4,
-        'm_dropout': 0.1,
-        'm_filters1': 42,
-        'm_filters2': 40,
-        'm_hidden_units': 115,
-        'm_kernel1_size': 21,
-        'm_kernel2_size': 27,
-        'm_pool1_size': 47,
-        'm_pool2_size': 24,
-        'm_stride1_size': 4,
-        'm_stride2_size': 18
-    }
+    # parameters1d_ta = {
+    #     'f_batch_size': 4,
+    #     'm_dropout': 0.1,
+    #     'm_filters1': 42,
+    #     'm_filters2': 40,
+    #     'm_hidden_units': 115,
+    #     'm_kernel1_size': 21,
+    #     'm_kernel2_size': 27,
+    #     'm_pool1_size': 47,
+    #     'm_pool2_size': 24,
+    #     'm_stride1_size': 4,
+    #     'm_stride2_size': 18
+    # }
+
+    parameters1d_ta = {'f_batch_size': 10,
+                       'm_dropout': 0.1,
+                       'm_filters1': 29,
+                       'm_filters2': 32,
+                       'm_hidden_units': 80,
+                       'm_kernel1_size': 3,
+                       'm_kernel2_size': 29,
+                       'm_pool1_size': 33,
+                       'm_pool2_size': 49,
+                       'm_stride1_size': 9,
+                       'm_stride2_size': 37}
+
 
     print('Building model for ', dataset, ' dataset')
     if dataset == 'si':
@@ -313,18 +329,68 @@ def get_model_1d_cnn_pho(dataset, input_shape):
     #     'm_stride2_size': 1
     # }
     parameters1d_ta = {
-        'f_batch_size': 1,
-        'm_dropout': 0.05,
-        'm_filters1': 43,
-        'm_filters2': 17,
-        'm_hidden_units': 46,
-        'm_kernel1_size': 31,
-        'm_kernel2_size': 17,
-        'm_pool1_size': 47,
-        'm_pool2_size': 41,
+        'f_batch_size': 2,
+        'm_dropout': 0.0,
+        'm_filters1': 28,
+        'm_filters2': 43,
+        'm_hidden_units': 91,
+        'm_kernel1_size': 28,
+        'm_kernel2_size': 30,
+        'm_pool1_size': 11,
+        'm_pool2_size': 29,
         'm_stride1_size': 2,
-        'm_stride2_size': 27
+        'm_stride2_size': 33}
+
+
+    print('Building model for ', dataset, ' dataset')
+    if dataset == 'si':
+        model_ = get_cnn1d_model1(parameters1d_si, 6, input_shape)
+    else:
+        model_ = get_cnn1d_model1(parameters1d_ta, 6, input_shape)
+
+    return model_
+
+def get_model_1d_cnn_wav2vec(dataset, input_shape):
+    parameters1d_si = {
+        'f_batch_size': 4,
+        'm_dropout': 0.2,
+        'm_filters1': 47,
+        'm_filters2': 41,
+        'm_hidden_units': 123,
+        'm_kernel1_size': 37,
+        'm_kernel2_size': 35,
+        'm_pool1_size': 28,
+        'm_pool2_size': 24,
+        'm_stride1_size': 1,
+        'm_stride2_size': 11
     }
+
+    # parameters1d_ta = {
+    #     'f_batch_size': 4,
+    #     'm_dropout': 0.3,
+    #     'm_filters1': 11,
+    #     'm_filters2': 37,
+    #     'm_hidden_units': 71,
+    #     'm_kernel1_size': 18,
+    #     'm_kernel2_size': 17,
+    #     'm_pool1_size': 18,
+    #     'm_pool2_size': 35,
+    #     'm_stride1_size': 3,
+    #     'm_stride2_size': 1
+    # }
+    parameters1d_ta = {
+        'f_batch_size': 2,
+        'm_dropout': 0.0,
+        'm_filters1': 28,
+        'm_filters2': 43,
+        'm_hidden_units': 91,
+        'm_kernel1_size': 28,
+        'm_kernel2_size': 30,
+        'm_pool1_size': 11,
+        'm_pool2_size': 29,
+        'm_stride1_size': 2,
+        'm_stride2_size': 33}
+
 
     print('Building model for ', dataset, ' dataset')
     if dataset == 'si':
@@ -506,25 +572,100 @@ def get_model_2d_cnn_pho(dataset, input_shape):
         'm_stride2_size_y': 1
     }
 
-    parameters2d_ta = {
+    # parameters2d_ta = {
+    #     'f_batch_size': 4,
+    #     'm_dropout': 0.2,
+    #     'm_filters1': 19,
+    #     'm_filters2': 16,
+    #     'm_hidden_units': 95,
+    #     'm_kernel1_size_x': 2,
+    #     'm_kernel1_size_y': 9,
+    #     'm_kernel2_size_x': 19,
+    #     'm_kernel2_size_y': 19,
+    #     'm_pool1_size_x': 4,
+    #     'm_pool1_size_y': 1,
+    #     'm_pool2_size_x': 18,
+    #     'm_pool2_size_y': 1,
+    #     'm_stride1_size_x': 1,
+    #     'm_stride1_size_y': 4,
+    #     'm_stride2_size_x': 3,
+    #     'm_stride2_size_y': 2
+    # }
+    parameters2d_ta = {'f_batch_size': 1, 'm_dropout': 0.2, 'm_filters1': 16, 'm_filters2': 15,
+                       'm_hidden_units': 112,
+                       'm_kernel1_size_x': 2, 'm_kernel1_size_y': 3, 'm_kernel2_size_x': 15,
+                       'm_kernel2_size_y': 15,
+                       'm_pool1_size_x': 13, 'm_pool1_size_y': 2, 'm_pool2_size_x': 19, 'm_pool2_size_y': 7,
+                       'm_stride1_size_x': 2, 'm_stride1_size_y': 4, 'm_stride2_size_x': 8,
+                       'm_stride2_size_y': 8}
+
+    print('Building model for ', dataset, ' dataset')
+    if dataset == 'si':
+        model_ = get_cnn_2d_model3(parameters2d_si, 6, input_shape)
+    else:
+        model_ = get_cnn_2d_model3(parameters2d_ta, 6, input_shape)
+
+    return model_
+
+
+def get_model_2d_cnn_wav2vec(dataset, input_shape):
+    parameters2d_si = {
         'f_batch_size': 4,
-        'm_dropout': 0.2,
-        'm_filters1': 19,
+        'm_dropout': 0.0,
+        'm_filters1': 17,
         'm_filters2': 16,
-        'm_hidden_units': 95,
+        'm_hidden_units': 104,
         'm_kernel1_size_x': 2,
-        'm_kernel1_size_y': 9,
-        'm_kernel2_size_x': 19,
-        'm_kernel2_size_y': 19,
-        'm_pool1_size_x': 4,
+        'm_kernel1_size_y': 3,
+        'm_kernel2_size_x': 17,
+        'm_kernel2_size_y': 10,
+        'm_pool1_size_x': 11,
         'm_pool1_size_y': 1,
-        'm_pool2_size_x': 18,
-        'm_pool2_size_y': 1,
-        'm_stride1_size_x': 1,
-        'm_stride1_size_y': 4,
-        'm_stride2_size_x': 3,
-        'm_stride2_size_y': 2
+        'm_pool2_size_x': 16,
+        'm_pool2_size_y': 8,
+        'm_stride1_size_x': 5,
+        'm_stride1_size_y': 3,
+        'm_stride2_size_x': 14,
+        'm_stride2_size_y': 1
     }
+
+    # parameters2d_ta = {
+    #     'f_batch_size': 4,
+    #     'm_dropout': 0.2,
+    #     'm_filters1': 19,
+    #     'm_filters2': 16,
+    #     'm_hidden_units': 95,
+    #     'm_kernel1_size_x': 2,
+    #     'm_kernel1_size_y': 9,
+    #     'm_kernel2_size_x': 19,
+    #     'm_kernel2_size_y': 19,
+    #     'm_pool1_size_x': 4,
+    #     'm_pool1_size_y': 1,
+    #     'm_pool2_size_x': 18,
+    #     'm_pool2_size_y': 1,
+    #     'm_stride1_size_x': 1,
+    #     'm_stride1_size_y': 4,
+    #     'm_stride2_size_x': 3,
+    #     'm_stride2_size_y': 2
+    # }
+    parameters2d_ta = {'f_batch_size': 2,
+                       'm_dropout': 0.0,
+                       'm_filters1': 14,
+                       'm_filters2': 8,
+                       'm_hidden_units': 102,
+                       'm_kernel1_size_x': 9,
+                       'm_kernel1_size_y': 6,
+                       'm_kernel2_size_x': 19,
+                       'm_kernel2_size_y': 18,
+                       'm_pool1_size_x': 19,
+                       'm_pool1_size_y': 1,
+                       'm_pool2_size_x': 13,
+                       'm_pool2_size_y': 2,
+                       'm_stride1_size_x': 10,
+                       'm_stride1_size_y': 3,
+                       'm_stride2_size_x': 16,
+                       'm_stride2_size_y': 8}
+
 
     print('Building model for ', dataset, ' dataset')
     if dataset == 'si':
@@ -646,12 +787,17 @@ model_dic = {
         '1d_cnn': get_model_1d_cnn_pho,
         '2d_cnn': get_model_2d_cnn_pho,
         'svm': get_svm
+    },
+    'wav2vec': {
+        '1d_cnn': get_model_1d_cnn_wav2vec,
+        '2d_cnn': get_model_2d_cnn_wav2vec,
+        'svm': get_svm
     }
 }
 
 # ----------------------------------------------------------------
 # K-fold trainig process
-splits = 5
+splits = 7
 model_fn = model_dic[expr][mtype]
 
 classes = ['class_0', 'class_1', 'class_2', 'class_3', 'class_4', 'class_5']

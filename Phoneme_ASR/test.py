@@ -67,7 +67,7 @@ file_names = file_names.values
 ds2_features = []
 
 for f in tqdm(file_names):
-    c_max_rows = 555
+    c_max_rows = 256
     signal, _ = sf.read(f)
     signal = torch.tensor(signal, device=device).float().unsqueeze(0)
 
@@ -84,15 +84,21 @@ for f in tqdm(file_names):
 
     phonemes = model.decode_phonemes(signal)
     out = phonemes.detach().numpy()
+    print("***********************")
+    print(phonemes.shape)
+    print(out.shape)
+    print(out)
     out = np.pad(out, ((0, c_max_rows - out.shape[0]), (0, 0)), 'constant')
+    print(out.shape)
+    print(out)
     ds2_features.append(out)
     # ds2_features.append(phonemes.detach().numpy())
-    print((phonemes.detach().numpy()).shape)
-    print(out.shape)
+    # print((phonemes.detach().numpy()).shape)
+    # print(out.shape)
 
 ds2_features = np.array(ds2_features)
-print(ds2_features.shape)
-print(ds2_features)
+# print(ds2_features.shape)
+# print(ds2_features)
 
 
 np.save(base_path + 'data/' + lang + '_Dataset/phoneme_decode_' + lang + '_data_v2', ds2_features)
