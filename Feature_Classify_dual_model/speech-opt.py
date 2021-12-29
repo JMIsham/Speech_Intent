@@ -27,6 +27,10 @@ from keras.layers import Conv1D, MaxPooling1D, Conv2D, MaxPooling2D
 from keras.layers import Dropout
 from keras.layers import Dense
 from keras.layers import Flatten
+from keras.layers import Input
+from keras.models import Model
+from keras.utils import plot_model
+from keras.layers.merge import concatenate
 from keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 
@@ -81,7 +85,7 @@ data_x_merge = np.load(datax_dic[lang][merger], allow_pickle=True)
 
 
 # print("*********** : ", data_x_merge.shape, data_x.shape, np.concatenate((data_x, data_x_merge), axis=1).shape)
-data_x = np.concatenate((data_x, data_x_merge), axis=1)
+# data_x = np.concatenate((data_x, data_x_merge), axis=1)
 
 num_of_classes = len(data_y.unique())
 print('Total data samples   :', data_x.shape[0])
@@ -103,8 +107,8 @@ if lang == 'si':
     data_x_dev, data_x_test, data_y_dev, data_y_test = \
         train_test_split(data_x_test, data_y_test, test_size=0.2, random_state=random_seed)
 else:
-    data_x_train, data_x_test, data_y_train, data_y_test = \
-        train_test_split(data_x, data_y, test_size=0.2, random_state=random_seed)
+    data_x_train, data_x_test, data_x_merge_train, data_x_merge_test, data_y_train, data_y_test = \
+        train_test_split(data_x, data_x_merge, data_y, test_size=0.2, random_state=random_seed)
 
 # reshape data for CNN
 if lang == 'si':
@@ -125,6 +129,9 @@ else:
         data_x_train = np.reshape(data_x_train,
                                   (data_x_train.shape[0], data_x_train.shape[1], data_x_train.shape[2], 1))
         data_x_test = np.reshape(data_x_test, (data_x_test.shape[0], data_x_test.shape[1], data_x_test.shape[2], 1))
+        data_x_merge_train = np.reshape(data_x_merge_train,
+                                  (data_x_merge_train.shape[0], data_x_merge_train.shape[1], data_x_merge_train.shape[2], 1))
+        data_x_merge_test = np.reshape(data_x_merge_test, (data_x_merge_test.shape[0], data_x_merge_test.shape[1], data_x_merge_test.shape[2], 1))
 
 # # Separate indices
 # indices_train = data_y_train[:, 6]
@@ -285,6 +292,101 @@ def get_cnn1_model3(param, num_of_classes):
     return model_
 
 
+def get_cnn1_model3_merge(param, num_of_classes):
+
+    visible1 = Input(shape=data_x_train.shape[1:])
+    conv11 = Conv2D(
+        param['m_filters1'],
+        (param['m_kernel1_size_x'], param['m_kernel1_size_y']),
+        activation='relu',
+        padding='same',
+        # input_shape=(555, 29, 1)
+        # input_shape=(256, 42, 1)
+    )(visible1)
+    pool11 = MaxPooling2D(
+        pool_size=(param['m_pool1_size_x'], param['m_pool1_size_y']),
+        strides=(param['m_stride1_size_x'], param['m_stride1_size_y'])
+    )(conv11)
+    drop11 = Dropout(
+        param['m_dropout']
+    )(pool11)
+
+    conv21 = Conv2D(
+        param['m_filters2'],
+        (param['m_kernel2_size_x'], param['m_kernel2_size_y']),
+        activation='relu',
+        padding='same'
+    )(drop11)
+
+    pool21 = MaxPooling2D(
+        pool_size=(param['m_pool2_size_x'], param['m_pool2_size_y']),
+        strides=(param['m_stride2_size_x'], param['m_stride2_size_y'])
+    )(conv21)
+
+    drop21 = Dropout(
+        param['m_dropout']
+    )(pool21)
+
+    flatten1 = Flatten()(drop21)
+
+    visible2 = Input(shape=data_x_merge_train.shape[1:])
+    conv12 = Conv2D(
+        param['m_filters1_2'],
+        (param['m_kernel1_size_x_2'], param['m_kernel1_size_y_2']),
+        activation='relu',
+        padding='same',
+        # input_shape=(555, 29, 1)
+        # input_shape=(256, 42, 1)
+    )(visible2)
+    pool12 = MaxPooling2D(
+        pool_size=(param['m_pool1_size_x_2'], param['m_pool1_size_y_2']),
+        strides=(param['m_stride1_size_x_2'], param['m_stride1_size_y_2'])
+    )(conv12)
+    drop12 = Dropout(
+        param['m_dropout_2']
+    )(pool12)
+
+    conv22 = Conv2D(
+        param['m_filters2_2'],
+        (param['m_kernel2_size_x_2'], param['m_kernel2_size_y_2']),
+        activation='relu',
+        padding='same'
+    )(drop12)
+
+    pool22 = MaxPooling2D(
+        pool_size=(param['m_pool2_size_x_2'], param['m_pool2_size_y_2']),
+        strides=(param['m_stride2_size_x_2'], param['m_stride2_size_y_2'])
+    )(conv22)
+
+    drop22 = Dropout(
+        param['m_dropout_2']
+    )(pool22)
+
+    flatten2 = Flatten()(drop22)
+
+    merge = concatenate([flatten1, flatten2])
+
+    hidden1 = Dense(
+        param['m_hidden_units'],
+        activation='relu'
+    )(merge)
+
+    output = Dense(
+        num_of_classes,
+        activation='softmax'
+    )(hidden1)
+
+    model = Model(inputs=[visible1, visible2], outputs=output)
+
+    # Compile model
+    model.compile(
+        loss='categorical_crossentropy',
+        optimizer=Adam(),
+        metrics=['accuracy'])
+
+    return model
+
+
 def get_cnn1_search_space3():
     space = {
         # "lr": hp.loguniform("m_lr", np.log(1e-4), np.log(1e-3)), # 0.0001 - 0.001
@@ -304,6 +406,59 @@ def get_cnn1_search_space3():
         "m_stride2_size_y": scope.int(hp.quniform("m_stride2_size_y", 1, 10, 1)),
         "m_hidden_units": scope.int(hp.quniform("m_hidden_units", 95, 130, 1)),
         "m_dropout": hp.quniform("m_dropout", 0, 0.5, 0.05),
+
+        "f_epochs": 2,
+        "f_batch_size": scope.int(hp.quniform("f_batch_size", 0, 10, 1))
+    }
+
+    return space
+
+
+def get_cnn1_search_space3_merge():
+    space = {
+        # "lr": hp.loguniform("m_lr", np.log(1e-4), np.log(1e-3)), # 0.0001 - 0.001
+        "m_filters1": scope.int(hp.quniform("m_filters1", 10, 20, 1)),
+        "m_kernel1_size_x": scope.int(hp.quniform("m_kernel1_size_x", 1, 10, 1)),
+        "m_kernel1_size_y": scope.int(hp.quniform("m_kernel1_size_y", 1, 10, 1)),
+        "m_filters2": scope.int(hp.quniform("m_filters2", 5, 18, 1)),
+        "m_kernel2_size_x": scope.int(hp.quniform("m_kernel2_size_x", 5, 20, 1)),
+        "m_kernel2_size_y": scope.int(hp.quniform("m_kernel2_size_y", 5, 20, 1)),
+        "m_pool1_size_x": scope.int(hp.quniform("m_pool1_size_x", 3, 20, 1)),
+        "m_pool1_size_y": scope.int(hp.quniform("m_pool1_size_y", 1, 10, 1)),
+        "m_pool2_size_x": scope.int(hp.quniform("m_pool2_size_x", 3, 20, 1)),
+        "m_pool2_size_y": scope.int(hp.quniform("m_pool2_size_y", 1, 10, 1)),
+        "m_stride1_size_x": scope.int(hp.quniform("m_stride1_size_x", 1, 20, 1)),
+        "m_stride1_size_y": scope.int(hp.quniform("m_stride1_size_y", 1, 10, 1)),
+        "m_stride2_size_x": scope.int(hp.quniform("m_stride2_size_x", 1, 20, 1)),
+        "m_stride2_size_y": scope.int(hp.quniform("m_stride2_size_y", 1, 10, 1)),
+
+        "m_filters1_2": scope.int(hp.quniform("m_filters1_2", 10, 20, 1)),
+        "m_kernel1_size_x_2": scope.int(hp.quniform("m_kernel1_size_x_2", 1, 10, 1)),
+        "m_kernel1_size_y_2": scope.int(hp.quniform("m_kernel1_size_y_2", 1, 10, 1)),
+        "m_filters2_2": scope.int(hp.quniform("m_filters2_2", 5, 18, 1)),
+        "m_kernel2_size_x_2": scope.int(hp.quniform("m_kernel2_size_x_2", 5, 20, 1)),
+        "m_kernel2_size_y_2": scope.int(hp.quniform("m_kernel2_size_y_2", 5, 20, 1)),
+        "m_pool1_size_x_2": scope.int(hp.quniform("m_pool1_size_x_2", 3, 20, 1)),
+        "m_pool1_size_y_2": scope.int(hp.quniform("m_pool1_size_y_2", 1, 10, 1)),
+        "m_pool2_size_x_2": scope.int(hp.quniform("m_pool2_size_x_2", 3, 20, 1)),
+        "m_pool2_size_y_2": scope.int(hp.quniform("m_pool2_size_y_2", 1, 10, 1)),
+        "m_stride1_size_x_2": scope.int(hp.quniform("m_stride1_size_x_2", 1, 20, 1)),
+        "m_stride1_size_y_2": scope.int(hp.quniform("m_stride1_size_y_2", 1, 10, 1)),
+        "m_stride2_size_x_2": scope.int(hp.quniform("m_stride2_size_x_2", 1, 20, 1)),
+        "m_stride2_size_y_2": scope.int(hp.quniform("m_stride2_size_y_2", 1, 10, 1)),
+
+        # "m_filters2_3": scope.int(hp.quniform("m_filters2_3", 5, 18, 1)),
+        # "m_kernel2_size_x_3": scope.int(hp.quniform("m_kernel2_size_x_3", 5, 20, 1)),
+        # "m_kernel2_size_y_3": scope.int(hp.quniform("m_kernel2_size_y_3", 5, 20, 1)),
+        # "m_pool1_size_x_3": scope.int(hp.quniform("m_pool1_size_x_3", 3, 20, 1)),
+        # "m_pool1_size_y_3": scope.int(hp.quniform("m_pool1_size_y_3", 1, 10, 1)),
+        # "m_pool2_size_x_3": scope.int(hp.quniform("m_pool2_size_x_3", 3, 20, 1)),
+        # "m_pool2_size_y_3": scope.int(hp.quniform("m_pool2_size_y_3", 1, 10, 1)),
+
+        "m_hidden_units": scope.int(hp.quniform("m_hidden_units", 95, 130, 1)),
+        "m_dropout": hp.quniform("m_dropout", 0, 0.5, 0.05),
+        "m_dropout_2": hp.quniform("m_dropout_2", 0, 0.5, 0.05),
+        # "m_dropout_3": hp.quniform("m_dropout_3", 0, 0.5, 0.05),
 
         "f_epochs": 2,
         "f_batch_size": scope.int(hp.quniform("f_batch_size", 0, 10, 1))
@@ -351,8 +506,8 @@ model_dic = {
         'sf': get_cnn1d_search_space3
     },
     '2d_cnn': {
-        'mf': get_cnn1_model3,
-        'sf': get_cnn1_search_space3
+        'mf': get_cnn1_model3_merge,
+        'sf': get_cnn1_search_space3_merge
     }
 }
 
@@ -373,16 +528,23 @@ def objective(parameters):
         )
 
         model.fit(
-            data_x_train, data_y_train,
-            # validation_data=(data_x_dev, data_y_dev),
+            [data_x_train, data_x_merge_train], data_y_train,
+            # [data_x_train, data_x_merge_train], data_y_train,
+            # validatmtypeion_data=(data_x_dev, data_y_dev),
             epochs=int(parameters['f_epochs']),
             batch_size=int(parameters['f_batch_size']),
             verbose=0
         )
 
         # score = model.evaluate(data_x_dev, data_y_dev, batch_size=int(parameters['f_batch_size']), verbose=0)
-        score = model.evaluate(data_x_test, data_y_test, batch_size=int(parameters['f_batch_size']), verbose=0)
+        score = model.evaluate([data_x_test, data_x_merge_test], data_y_test, batch_size=int(parameters['f_batch_size']), verbose=0)
 
+        print("*********** best score")
+        print({
+            'loss': score[0],
+            'acc': score[1],
+            'status': STATUS_OK
+        })
         K.clear_session()
         del model
 

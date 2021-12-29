@@ -18,6 +18,9 @@ from keras.layers import Dense
 from keras.layers import Flatten
 from keras.optimizers import Adam
 from keras import regularizers
+from keras.layers import Input
+from keras.models import Model
+from keras.layers.merge import concatenate
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import classification_report
@@ -69,19 +72,21 @@ def get_data(lang, expr, mtype):
     # load ds decoded output
     data_x = np.load(datax_dic[lang][expr])
     data_x_merge = np.load(datax_dic[lang][merger], allow_pickle=True)
-    data_x = np.concatenate((data_x, data_x_merge), axis=1)
+    # data_x = np.concatenate((data_x, data_x_merge), axis=1)
 
     # reshape data for CNN
     # data_x = np.reshape(data_x, (data_x.shape[0], 555, 29, 1))
     if mtype == '1d_cnn':
         data_x = np.reshape(data_x, (data_x.shape[0], data_x.shape[1], data_x.shape[2]))
+        data_x_merge = np.reshape(data_x_merge, (data_x_merge.shape[0], data_x_merge.shape[1], data_x_merge.shape[2]))
     if mtype == '2d_cnn':
         data_x = np.reshape(data_x, (data_x.shape[0], data_x.shape[1], data_x.shape[2], 1))
+        data_x_merge = np.reshape(data_x_merge, (data_x_merge.shape[0], data_x_merge.shape[1], data_x_merge.shape[2], 1))
     if mtype == 'svm':
         data_x = np.reshape(data_x, (data_x.shape[0], data_x.shape[1] * data_x.shape[2]))
 
     num_of_classes = len(data_y.unique())
-    print('Total data samples   :', data_x.shape[0])
+    print('Total data samples   :', data_x.shape[0], data_x_merge.shape[0])
     print('Number of classes    :', num_of_classes)
 
     # one hot encoding y values
@@ -95,12 +100,12 @@ def get_data(lang, expr, mtype):
     # print data set sizes
     print()
     print('----Dataset Detail----')
-    print('Training Data X  :', data_x.shape, ' Y', data_y.shape)
+    print('Training Data X  :', data_x.shape, data_x_merge.shape, ' Y', data_y.shape)
 
     print('--Occurrences in each classes--')
     print('Training Data   :', data_y.sum(axis=0))
 
-    return data_x, data_y
+    return [data_x, data_x_merge], data_y
 
 
 def get_mfcc_data(dataset):
@@ -231,16 +236,16 @@ def get_model_1d_cnn(dataset, input_shape):
     #     'm_stride2_size': 5
     # }
     parameters1d_ta = {
-        'f_batch_size': 1.0,
+        'f_batch_size': 1,
         'm_dropout': 0.05,
-        'm_filters1': 43.0,
-        'm_filters2': 17.0,
-        'm_hidden_units': 46.0,
-        'm_kernel1_size': 31.0,
-        'm_kernel2_size': 17.0,
-        'm_pool1_size': 47.0,
-        'm_pool2_size': 41.0,
-        'm_stride1_size': 2.0,
+        'm_filters1': 43,
+        'm_filters2': 17,
+        'm_hidden_units': 46,
+        'm_kernel1_size': 31,
+        'm_kernel2_size': 17,
+        'm_pool1_size': 47,
+        'm_pool2_size': 41,
+        'm_stride1_size': 2,
         'm_stride2_size': 27.0
     }
 
@@ -334,7 +339,7 @@ def get_model_1d_cnn_pho(dataset, input_shape):
     # }
     parameters1d_ta = {
         'f_batch_size': 2,
-        'm_dropout': 0.0,
+        'm_dropout': 0,
         'm_filters1': 28,
         'm_filters2': 43,
         'm_hidden_units': 91,
@@ -384,7 +389,7 @@ def get_model_1d_cnn_wav2vec(dataset, input_shape):
     # }
     parameters1d_ta = {
         'f_batch_size': 2,
-        'm_dropout': 0.0,
+        'm_dropout': 0,
         'm_filters1': 28,
         'm_filters2': 43,
         'm_hidden_units': 91,
@@ -558,7 +563,7 @@ def get_model_2d_cnn_ds2(dataset, input_shape):
 def get_model_2d_cnn_pho(dataset, input_shape):
     parameters2d_si = {
         'f_batch_size': 4,
-        'm_dropout': 0.0,
+        'm_dropout': 0,
         'm_filters1': 17,
         'm_filters2': 16,
         'm_hidden_units': 104,
@@ -595,19 +600,13 @@ def get_model_2d_cnn_pho(dataset, input_shape):
     #     'm_stride2_size_x': 3,
     #     'm_stride2_size_y': 2
     # }
-    # parameters2d_ta = {'f_batch_size': 1, 'm_dropout': 0.2, 'm_filters1': 16, 'm_filters2': 15,
-    #                    'm_hidden_units': 112,
-    #                    'm_kernel1_size_x': 2, 'm_kernel1_size_y': 3, 'm_kernel2_size_x': 15,
-    #                    'm_kernel2_size_y': 15,
-    #                    'm_pool1_size_x': 13, 'm_pool1_size_y': 2, 'm_pool2_size_x': 19, 'm_pool2_size_y': 7,
-    #                    'm_stride1_size_x': 2, 'm_stride1_size_y': 4, 'm_stride2_size_x': 8,
-    #                    'm_stride2_size_y': 8}
-    parameters2d_ta = {'f_batch_size': 1.0, 'm_dropout': 0.05, 'm_filters1': 17.0, 'm_filters2': 16.0,
-                       'm_hidden_units': 105.0, 'm_kernel1_size_x': 3.0, 'm_kernel1_size_y': 9.0,
-                       'm_kernel2_size_x': 14.0, 'm_kernel2_size_y': 19.0, 'm_pool1_size_x': 20.0,
-                       'm_pool1_size_y': 1.0, 'm_pool2_size_x': 10.0, 'm_pool2_size_y': 4.0, 'm_stride1_size_x': 8.0,
-                       'm_stride1_size_y': 3.0, 'm_stride2_size_x': 17.0, 'm_stride2_size_y': 7.0}
-
+    parameters2d_ta = {'f_batch_size': 1, 'm_dropout': 0.2, 'm_filters1': 16, 'm_filters2': 15,
+                       'm_hidden_units': 112,
+                       'm_kernel1_size_x': 2, 'm_kernel1_size_y': 3, 'm_kernel2_size_x': 15,
+                       'm_kernel2_size_y': 15,
+                       'm_pool1_size_x': 13, 'm_pool1_size_y': 2, 'm_pool2_size_x': 19, 'm_pool2_size_y': 7,
+                       'm_stride1_size_x': 2, 'm_stride1_size_y': 4, 'm_stride2_size_x': 8,
+                       'm_stride2_size_y': 8}
 
     print('Building model for ', dataset, ' dataset')
     if dataset == 'si':
@@ -618,10 +617,71 @@ def get_model_2d_cnn_pho(dataset, input_shape):
     return model_
 
 
+def get_model_2d_cnn_pho_merge(dataset, input_shape):
+    parameters2d_si = {
+        'f_batch_size': 4,
+        'm_dropout': 0,
+        'm_filters1': 17,
+        'm_filters2': 16,
+        'm_hidden_units': 104,
+        'm_kernel1_size_x': 2,
+        'm_kernel1_size_y': 3,
+        'm_kernel2_size_x': 17,
+        'm_kernel2_size_y': 10,
+        'm_pool1_size_x': 11,
+        'm_pool1_size_y': 1,
+        'm_pool2_size_x': 16,
+        'm_pool2_size_y': 8,
+        'm_stride1_size_x': 5,
+        'm_stride1_size_y': 3,
+        'm_stride2_size_x': 14,
+        'm_stride2_size_y': 1
+    }
+
+    # parameters2d_ta = {
+    #     'f_batch_size': 4,
+    #     'm_dropout': 0.2,
+    #     'm_filters1': 19,
+    #     'm_filters2': 16,
+    #     'm_hidden_units': 95,
+    #     'm_kernel1_size_x': 2,
+    #     'm_kernel1_size_y': 9,
+    #     'm_kernel2_size_x': 19,
+    #     'm_kernel2_size_y': 19,
+    #     'm_pool1_size_x': 4,
+    #     'm_pool1_size_y': 1,
+    #     'm_pool2_size_x': 18,
+    #     'm_pool2_size_y': 1,
+    #     'm_stride1_size_x': 1,
+    #     'm_stride1_size_y': 4,
+    #     'm_stride2_size_x': 3,
+    #     'm_stride2_size_y': 2
+    # }
+    parameters2d_ta = {'f_batch_size': 8, 'm_dropout': 0.15000000000000002, 'm_dropout_2': 0.35000000000000003,
+                       'm_filters1': 11, 'm_filters1_2': 19, 'm_filters2': 17, 'm_filters2_2': 14,
+                       'm_hidden_units': 105, 'm_kernel1_size_x': 3, 'm_kernel1_size_x_2': 5,
+                       'm_kernel1_size_y': 5, 'm_kernel1_size_y_2': 10, 'm_kernel2_size_x': 7,
+                       'm_kernel2_size_x_2': 12, 'm_kernel2_size_y': 11, 'm_kernel2_size_y_2': 10,
+                       'm_pool1_size_x': 7, 'm_pool1_size_x_2': 5, 'm_pool1_size_y': 1, 'm_pool1_size_y_2': 5,
+                       'm_pool2_size_x': 15, 'm_pool2_size_x_2': 9, 'm_pool2_size_y': 3, 'm_pool2_size_y_2': 9,
+                       'm_stride1_size_x': 1, 'm_stride1_size_x_2': 10, 'm_stride1_size_y': 10,
+                       'm_stride1_size_y_2': 1, 'm_stride2_size_x': 9, 'm_stride2_size_x_2': 7,
+                       'm_stride2_size_y': 5, 'm_stride2_size_y_2': 4}
+
+
+    print('Building model for ', dataset, ' dataset')
+    if dataset == 'si':
+        model_ = get_cnn_2d_model3(parameters2d_si, 6, input_shape)
+    else:
+        model_ = get_cnn1_model3_merge(parameters2d_ta, 6, input_shape)
+
+    return model_
+
+
 def get_model_2d_cnn_wav2vec(dataset, input_shape):
     parameters2d_si = {
         'f_batch_size': 4,
-        'm_dropout': 0.0,
+        'm_dropout': 0,
         'm_filters1': 17,
         'm_filters2': 16,
         'm_hidden_units': 104,
@@ -661,7 +721,7 @@ def get_model_2d_cnn_wav2vec(dataset, input_shape):
 
     # wav2vec workign one with 73% acc
     # parameters2d_ta = {'f_batch_size': 2,
-    #                    'm_dropout': 0.0,
+    #                    'm_dropout': 0,
     #                    'm_filters1': 14,
     #                    'm_filters2': 8,
     #                    'm_hidden_units': 102,
@@ -677,11 +737,10 @@ def get_model_2d_cnn_wav2vec(dataset, input_shape):
     #                    'm_stride1_size_y': 3,
     #                    'm_stride2_size_x': 16,
     #                    'm_stride2_size_y': 8}
-    parameters2d_ta = {'f_batch_size': 1, 'm_dropout': 0.05, 'm_filters1': 17, 'm_filters2': 16,
-                       'm_hidden_units': 105, 'm_kernel1_size_x': 3, 'm_kernel1_size_y': 9,
-                       'm_kernel2_size_x': 14, 'm_kernel2_size_y': 19, 'm_pool1_size_x': 20,
-                       'm_pool1_size_y': 1, 'm_pool2_size_x': 10, 'm_pool2_size_y': 4, 'm_stride1_size_x': 8,
-                       'm_stride1_size_y': 3, 'm_stride2_size_x': 17, 'm_stride2_size_y': 7}
+    parameters2d_ta = {'f_batch_size': 3, 'm_dropout': 0.05, 'm_filters1': 14, 'm_filters2': 12, 'm_hidden_units': 109,
+     'm_kernel1_size_x': 10, 'm_kernel1_size_y': 10, 'm_kernel2_size_x': 18, 'm_kernel2_size_y': 7,
+     'm_pool1_size_x': 20, 'm_pool1_size_y': 1, 'm_pool2_size_x': 16, 'm_pool2_size_y': 3,
+     'm_stride1_size_x': 17, 'm_stride1_size_y': 6, 'm_stride2_size_x': 8, 'm_stride2_size_y': 7}
 
     print('Building model for ', dataset, ' dataset')
     if dataset == 'si':
@@ -723,7 +782,7 @@ def get_model_fnn2(dataset):
         'dense1': 508,
         'dense2': 221,
         'dense3': 205,
-        'f_batch_size': 1.0,
+        'f_batch_size': 1,
         'm_dropout': 0.25
     }
 
@@ -735,6 +794,119 @@ def get_model_fnn2(dataset):
 
     return model_
 
+
+def get_merge_model(dataset, input_shape):
+    parameters2d_ta = {'f_batch_size': 2, 'm_dropout': 0.05, 'm_dropout_2': 0.2, 'm_filters1': 16,
+                       'm_filters1_2': 15, 'm_filters2': 10, 'm_filters2_2': 8, 'm_hidden_units': 96,
+                       'm_kernel1_size_x': 7, 'm_kernel1_size_x_2': 4, 'm_kernel1_size_y': 8,
+                       'm_kernel1_size_y_2': 6, 'm_kernel2_size_x': 17, 'm_kernel2_size_x_2': 15,
+                       'm_kernel2_size_y': 18, 'm_kernel2_size_y_2': 7, 'm_pool1_size_x': 9,
+                       'm_pool1_size_x_2': 13, 'm_pool1_size_y': 1, 'm_pool1_size_y_2': 4, 'm_pool2_size_x': 9,
+                       'm_pool2_size_x_2': 12, 'm_pool2_size_y': 4, 'm_pool2_size_y_2': 3,
+                       'm_stride1_size_x': 7, 'm_stride1_size_x_2': 5, 'm_stride1_size_y': 4,
+                       'm_stride1_size_y_2': 3, 'm_stride2_size_x': 17, 'm_stride2_size_x_2': 5,
+                       'm_stride2_size_y': 9, 'm_stride2_size_y_2': 10}
+
+
+    print('Building model for ', dataset, ' dataset')
+    model_ = get_cnn1_model3_merge(parameters2d_ta, 6, input_shape)
+
+    return model_
+
+
+def get_cnn1_model3_merge(param, num_of_classes, input_shape):
+
+    visible1 = Input(shape=input_shape[0])
+    conv11 = Conv2D(
+        param['m_filters1'],
+        (param['m_kernel1_size_x'], param['m_kernel1_size_y']),
+        activation='relu',
+        padding='same',
+        # input_shape=(555, 29, 1)
+        # input_shape=(256, 42, 1)
+    )(visible1)
+    pool11 = MaxPooling2D(
+        pool_size=(param['m_pool1_size_x'], param['m_pool1_size_y']),
+        strides=(param['m_stride1_size_x'], param['m_stride1_size_y'])
+    )(conv11)
+    drop11 = Dropout(
+        param['m_dropout']
+    )(pool11)
+
+    conv21 = Conv2D(
+        param['m_filters2'],
+        (param['m_kernel2_size_x'], param['m_kernel2_size_y']),
+        activation='relu',
+        padding='same'
+    )(drop11)
+
+    pool21 = MaxPooling2D(
+        pool_size=(param['m_pool2_size_x'], param['m_pool2_size_y']),
+        strides=(param['m_stride2_size_x'], param['m_stride2_size_y'])
+    )(conv21)
+
+    drop21 = Dropout(
+        param['m_dropout']
+    )(pool21)
+
+    flatten1 = Flatten()(drop21)
+
+    visible2 = Input(shape=input_shape[1])
+    conv12 = Conv2D(
+        param['m_filters1_2'],
+        (param['m_kernel1_size_x_2'], param['m_kernel1_size_y_2']),
+        activation='relu',
+        padding='same',
+        # input_shape=(555, 29, 1)
+        # input_shape=(256, 42, 1)
+    )(visible2)
+    pool12 = MaxPooling2D(
+        pool_size=(param['m_pool1_size_x_2'], param['m_pool1_size_y_2']),
+        strides=(param['m_stride1_size_x_2'], param['m_stride1_size_y_2'])
+    )(conv12)
+    drop12 = Dropout(
+        param['m_dropout_2']
+    )(pool12)
+
+    conv22 = Conv2D(
+        param['m_filters2_2'],
+        (param['m_kernel2_size_x_2'], param['m_kernel2_size_y_2']),
+        activation='relu',
+        padding='same'
+    )(drop12)
+
+    pool22 = MaxPooling2D(
+        pool_size=(param['m_pool2_size_x_2'], param['m_pool2_size_y_2']),
+        strides=(param['m_stride2_size_x_2'], param['m_stride2_size_y_2'])
+    )(conv22)
+
+    drop22 = Dropout(
+        param['m_dropout_2']
+    )(pool22)
+
+    flatten2 = Flatten()(drop22)
+
+    merge = concatenate([flatten1, flatten2])
+
+    hidden1 = Dense(
+        param['m_hidden_units'],
+        activation='relu'
+    )(merge)
+
+    output = Dense(
+        num_of_classes,
+        activation='softmax'
+    )(hidden1)
+
+    model = Model(inputs=[visible1, visible2], outputs=output)
+
+    # Compile model
+    model.compile(
+        loss='categorical_crossentropy',
+        optimizer=Adam(),
+        metrics=['accuracy'])
+
+    return model
 
 def get_fnn_mfcc_model(param, num_of_classes):
     model_ = Sequential()
@@ -806,7 +978,7 @@ model_dic = {
     },
     'wav2vec': {
         '1d_cnn': get_model_1d_cnn_wav2vec,
-        '2d_cnn': get_model_2d_cnn_wav2vec,
+        '2d_cnn': get_merge_model,
         'svm': get_svm
     }
 }
@@ -828,22 +1000,22 @@ cvscores = []
 c_reports = []
 
 fold = 0
-for train, test in kfold.split(X, np.argmax(Y, axis=1)):
+for train, test in kfold.split(X[0], np.argmax(Y, axis=1)):
     fold += 1
     print('Fold ', fold)
     # create model
     if mtype != 'svm':
-        model = model_fn(lang, X[train].shape[1:])
+        model = model_fn(lang, [X[0][train].shape[1:], X[1][train].shape[1:]])
         # Fit the model
         model.fit(
-            X[train], Y[train],
-            validation_data=(X[test], Y[test]),
+            [X[0][train], X[1][train]], Y[train],
+            validation_data=([X[0][test], X[1][test]], Y[test]),
             epochs=9, batch_size=4, verbose=2
         )
 
         # evaluate the model
-        scores = model.evaluate(X[test], Y[test], verbose=0)
-        y_pedict = model.predict(X[test])
+        scores = model.evaluate([X[0][test], X[1][test]], Y[test], verbose=0)
+        y_pedict = model.predict([X[0][test], X[1][test]])
     else:
         class_weights = class_weight.compute_class_weight(
             'balanced',
