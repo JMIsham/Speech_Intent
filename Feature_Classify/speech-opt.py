@@ -38,6 +38,7 @@ from hyperopt.pyll.base import scope
 lang = 'ta'  # 'si', 'ta'
 expr = 'wav2vec'  # 'ds1', 'ds2', 'phonemes', wav2vec
 mtype = '2d_cnn'  # '1d_cnn', '2d_cnn
+merger = 'ds2'  # 'ds1', 'ds2', 'phonemes', wav2vec
 
 csv_dic = {
     'si': '../input/speechsi/formatted_data_v2.csv',
@@ -71,6 +72,16 @@ indices = np.arange(len(data_y))
 
 # load ds decoded output
 data_x = np.load(datax_dic[lang][expr], allow_pickle=True)
+data_x_merge = np.load(datax_dic[lang][merger], allow_pickle=True)
+
+# data_merge  = np.array()
+# for i in range(0, data_x.shape[0]):
+#     data_merge.append(np.concatenate(data_x[i], data_x_merge[i], axis=1))
+
+
+
+# print("*********** : ", data_x_merge.shape, data_x.shape, np.concatenate((data_x, data_x_merge), axis=1).shape)
+data_x = np.concatenate((data_x, data_x_merge), axis=1)
 
 num_of_classes = len(data_y.unique())
 print('Total data samples   :', data_x.shape[0])

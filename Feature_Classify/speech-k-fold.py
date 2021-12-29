@@ -30,9 +30,11 @@ import tensorflow
 lang = 'ta'  # 'si', 'ta'
 expr = 'wav2vec'  # 'ds1', 'ds2', 'phonemes', wav2vec
 mtype = '2d_cnn'  # '1d_cnn', '2d_cnn', 'svm'
+merger = 'ds2'  # 'ds1', 'ds2', 'phonemes', wav2vec
+
 
 # random number
-random_seed = 7
+random_seed = 10
 np.random.seed(random_seed)
 # set_random_seed(random_seed)
 tensorflow.random.set_seed(random_seed)
@@ -66,6 +68,8 @@ def get_data(lang, expr, mtype):
 
     # load ds decoded output
     data_x = np.load(datax_dic[lang][expr])
+    data_x_merge = np.load(datax_dic[lang][merger], allow_pickle=True)
+    data_x = np.concatenate((data_x, data_x_merge), axis=1)
 
     # reshape data for CNN
     # data_x = np.reshape(data_x, (data_x.shape[0], 555, 29, 1))
@@ -591,13 +595,19 @@ def get_model_2d_cnn_pho(dataset, input_shape):
     #     'm_stride2_size_x': 3,
     #     'm_stride2_size_y': 2
     # }
-    parameters2d_ta = {'f_batch_size': 1, 'm_dropout': 0.2, 'm_filters1': 16, 'm_filters2': 15,
-                       'm_hidden_units': 112,
-                       'm_kernel1_size_x': 2, 'm_kernel1_size_y': 3, 'm_kernel2_size_x': 15,
-                       'm_kernel2_size_y': 15,
-                       'm_pool1_size_x': 13, 'm_pool1_size_y': 2, 'm_pool2_size_x': 19, 'm_pool2_size_y': 7,
-                       'm_stride1_size_x': 2, 'm_stride1_size_y': 4, 'm_stride2_size_x': 8,
-                       'm_stride2_size_y': 8}
+    # parameters2d_ta = {'f_batch_size': 1, 'm_dropout': 0.2, 'm_filters1': 16, 'm_filters2': 15,
+    #                    'm_hidden_units': 112,
+    #                    'm_kernel1_size_x': 2, 'm_kernel1_size_y': 3, 'm_kernel2_size_x': 15,
+    #                    'm_kernel2_size_y': 15,
+    #                    'm_pool1_size_x': 13, 'm_pool1_size_y': 2, 'm_pool2_size_x': 19, 'm_pool2_size_y': 7,
+    #                    'm_stride1_size_x': 2, 'm_stride1_size_y': 4, 'm_stride2_size_x': 8,
+    #                    'm_stride2_size_y': 8}
+    parameters2d_ta = {'f_batch_size': 1.0, 'm_dropout': 0.05, 'm_filters1': 17.0, 'm_filters2': 16.0,
+                       'm_hidden_units': 105.0, 'm_kernel1_size_x': 3.0, 'm_kernel1_size_y': 9.0,
+                       'm_kernel2_size_x': 14.0, 'm_kernel2_size_y': 19.0, 'm_pool1_size_x': 20.0,
+                       'm_pool1_size_y': 1.0, 'm_pool2_size_x': 10.0, 'm_pool2_size_y': 4.0, 'm_stride1_size_x': 8.0,
+                       'm_stride1_size_y': 3.0, 'm_stride2_size_x': 17.0, 'm_stride2_size_y': 7.0}
+
 
     print('Building model for ', dataset, ' dataset')
     if dataset == 'si':
@@ -648,24 +658,30 @@ def get_model_2d_cnn_wav2vec(dataset, input_shape):
     #     'm_stride2_size_x': 3,
     #     'm_stride2_size_y': 2
     # }
-    parameters2d_ta = {'f_batch_size': 2,
-                       'm_dropout': 0.0,
-                       'm_filters1': 14,
-                       'm_filters2': 8,
-                       'm_hidden_units': 102,
-                       'm_kernel1_size_x': 9,
-                       'm_kernel1_size_y': 6,
-                       'm_kernel2_size_x': 19,
-                       'm_kernel2_size_y': 18,
-                       'm_pool1_size_x': 19,
-                       'm_pool1_size_y': 1,
-                       'm_pool2_size_x': 13,
-                       'm_pool2_size_y': 2,
-                       'm_stride1_size_x': 10,
-                       'm_stride1_size_y': 3,
-                       'm_stride2_size_x': 16,
-                       'm_stride2_size_y': 8}
 
+    # wav2vec workign one with 73% acc
+    # parameters2d_ta = {'f_batch_size': 2,
+    #                    'm_dropout': 0.0,
+    #                    'm_filters1': 14,
+    #                    'm_filters2': 8,
+    #                    'm_hidden_units': 102,
+    #                    'm_kernel1_size_x': 9,
+    #                    'm_kernel1_size_y': 6,
+    #                    'm_kernel2_size_x': 19,
+    #                    'm_kernel2_size_y': 18,
+    #                    'm_pool1_size_x': 19,
+    #                    'm_pool1_size_y': 1,
+    #                    'm_pool2_size_x': 13,
+    #                    'm_pool2_size_y': 2,
+    #                    'm_stride1_size_x': 10,
+    #                    'm_stride1_size_y': 3,
+    #                    'm_stride2_size_x': 16,
+    #                    'm_stride2_size_y': 8}
+    parameters2d_ta = {'f_batch_size': 1, 'm_dropout': 0.05, 'm_filters1': 17, 'm_filters2': 16,
+                       'm_hidden_units': 105, 'm_kernel1_size_x': 3, 'm_kernel1_size_y': 9,
+                       'm_kernel2_size_x': 14, 'm_kernel2_size_y': 19, 'm_pool1_size_x': 20,
+                       'm_pool1_size_y': 1, 'm_pool2_size_x': 10, 'm_pool2_size_y': 4, 'm_stride1_size_x': 8,
+                       'm_stride1_size_y': 3, 'm_stride2_size_x': 17, 'm_stride2_size_y': 7}
 
     print('Building model for ', dataset, ' dataset')
     if dataset == 'si':
@@ -797,7 +813,7 @@ model_dic = {
 
 # ----------------------------------------------------------------
 # K-fold trainig process
-splits = 7
+splits = 5
 model_fn = model_dic[expr][mtype]
 
 classes = ['class_0', 'class_1', 'class_2', 'class_3', 'class_4', 'class_5']
@@ -822,7 +838,7 @@ for train, test in kfold.split(X, np.argmax(Y, axis=1)):
         model.fit(
             X[train], Y[train],
             validation_data=(X[test], Y[test]),
-            epochs=2, batch_size=4, verbose=2
+            epochs=9, batch_size=4, verbose=2
         )
 
         # evaluate the model

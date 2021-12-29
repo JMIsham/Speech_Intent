@@ -33,12 +33,12 @@ if __name__ == '__main__':
                                  cutoff_top_n=args.cutoff_top_n, cutoff_prob=args.cutoff_prob,
                                  beam_width=args.beam_width, num_processes=args.lm_workers)
     elif args.decoder == "greedy":
-        decoder = GreedyDecoder(model.labels, blank_index=model.labels.index('_'))
+        decoder = GreedyDecoder(model._labels, blank_index=model._labels.index('_'))
     else:
         decoder = None
-    target_decoder = GreedyDecoder(model.labels, blank_index=model.labels.index('_'))
-    test_dataset = SpectrogramDataset(audio_conf=model.audio_conf, manifest_filepath=args.test_manifest,
-                                      labels=model.labels, normalize=True)
+    target_decoder = GreedyDecoder(model._labels, blank_index=model._labels.index('_'))
+    test_dataset = SpectrogramDataset(audio_conf=model._audio_conf, manifest_filepath=args.test_manifest,
+                                      labels=model._labels, normalize=True)
     test_loader = AudioDataLoader(test_dataset, batch_size=args.batch_size,
                                   num_workers=args.num_workers)
     total_cer, total_wer, num_tokens, num_chars = 0, 0, 0, 0

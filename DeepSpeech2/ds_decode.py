@@ -3,8 +3,10 @@ import argparse
 import numpy as np
 import pandas as pd
 import torch
+import json
 
 from tqdm import tqdm
+import decoder
 
 from decoder import GreedyDecoder
 from torch.autograd import Variable
@@ -14,18 +16,51 @@ from utils import load_model
 from data.data_loader import SpectrogramParser
 
 
+def decode_results(model, decoded_output, decoded_offsets):
+    results = {
+        "output": [],
+        # "_meta": {
+        #     "acoustic_model": {
+        #         "name": os.path.basename(args.model_path)
+        #     },
+        #     "language_model": {
+        #         "name": os.path.basename(args.lm_path) if args.lm_path else None,
+        #     },
+        #     "decoder": {
+        #         "lm": args.lm_path is not None,
+        #         "alpha": args.alpha if args.lm_path is not None else None,
+        #         "beta": args.beta if args.lm_path is not None else None,
+        #         "type": args.decoder,
+        #     }
+        # }
+    }
+
+    for b in range(len(decoded_output)):
+        for pi in range(min(args.top_paths, len(decoded_output[b]))):
+            result = {'transcription': decoded_output[b][pi]}
+            if args.offsets:
+                result['offsets'] = decoded_offsets[b][pi].tolist()
+            results['output'].append(result)
+    return results
+
 def transcribe(audio_path, parser, model, device):
     c_max_rows = 555
 
+    print(audio_path)
     spect = parser.parse_audio(audio_path).contiguous()
     spect = spect.view(1, 1, spect.size(0), spect.size(1))
     spect = spect.to(device)
-    # input_sizes = torch.IntTensor([spect.size(3)]).int()
+    input_sizes = torch.IntTensor([spect.size(3)]).int()
+    print(input_sizes)
     out = model(Variable(spect, volatile=True))
+    print(model._labels)
+    test1, test2 = decoder.GreedyDecoder(model._labels).decode(out)
+    print("****************", )
+    print(json.dumps(decode_results(model, test1, test2)))
     out = np.squeeze(out.data.numpy())
     print("****************************")
     print(out.shape)
-    out = np.pad(out, ((0, c_max_rows - out.shape[0]), (0, 0)), 'constant')
+    out = np.pad(out, ((0, c_max_rows - out.shape[0]), (0, 32 - out.shape[1])), 'constant')
     print(out.shape)
     return out
 
