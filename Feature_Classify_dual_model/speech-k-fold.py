@@ -1010,7 +1010,7 @@ for train, test in kfold.split(X[0], np.argmax(Y, axis=1)):
         model.fit(
             [X[0][train], X[1][train]], Y[train],
             validation_data=([X[0][test], X[1][test]], Y[test]),
-            epochs=9, batch_size=4, verbose=2
+            epochs=12, batch_size=4, verbose=2
         )
 
         # evaluate the model
